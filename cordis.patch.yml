@@ -1,0 +1,3 @@
+- insert:
+    - id: claude-cache-guard
+      name: dsh-claude-cache-guard
