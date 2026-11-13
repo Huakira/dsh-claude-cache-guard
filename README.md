@@ -2,7 +2,7 @@
 
 个人自用插件，代码和文档由 AI 辅助编写。适合在 DSH 中使用 Claude 长会话、需要避免插件变更后无提示地重建历史缓存的用户。
 
-通过 DSH 插件管理器安装 GitHub bundle：`@huakira/claude-cache-guard`。本插件针对 DSH `0.2.2-rc.1` 的公开服务接口开发；变更线上依赖前应等待宿主任务空闲。
+安装：`dsh plugin --profile web add @huakira/claude-cache-guard`。本插件针对 DSH `0.2.2-rc.1` 的公开服务接口开发；变更线上依赖前应等待宿主任务空闲。
 
 ## 工作方式
 
