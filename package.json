@@ -1,17 +1,31 @@
 {
-  "name": "dsh-claude-cache-guard",
+  "name": "@huakira/claude-cache-guard",
   "version": "0.1.1",
   "description": "Event-driven Claude cache protection for DSH plugin and prompt changes",
   "type": "module",
   "license": "MIT",
   "author": "Huakira",
   "exports": {
-    ".": "./index.js", "./client": "./client.js",
+    ".": "./index.js",
+    "./client": "./client.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
-    "./locale/*": "./locale/*", "./icon": "./icon.svg"
+    "./locale/*": "./locale/*",
+    "./icon": "./icon.svg"
   },
-  "files": ["index.js", "guard.js", "runtime.js", "client.js", "cordis.patch.yml", "locale", "icon.svg", "README.md", "LICENSE"],
-  "scripts": { "test": "node --test tests/*.test.js" },
+  "files": [
+    "index.js",
+    "guard.js",
+    "runtime.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
   "peerDependencies": {
     "@deepseek-ai/dsh-agent": "0.2.2-rc.1",
     "@deepseek-ai/dsh-system-prompt": "0.2.2-rc.1",
@@ -25,11 +39,32 @@
     "@deepseek-ai/dsh-storage-json": "0.2.2-rc.1"
   },
   "dsh": {
-    "bundle": { "patch": "./cordis.patch.yml" },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
     "client": {
       "platform": "web",
-      "inject": ["@deepseek-ai/dsh-client-ui-slots", "@deepseek-ai/dsh-client-locale"],
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-locale"
+      ],
       "immediately": true
     }
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Huakira/dsh-claude-cache-guard.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "dsh": ">=0.2.2-rc.1 <0.3.0",
+    "node": ">=20"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness"
+  ]
 }
