@@ -1,5 +1,5 @@
 {
-  "name": "@huakira/claude-cache-guard",
+  "name": "@huakirax/claude-cache-guard",
   "version": "0.1.1",
   "description": "Event-driven Claude cache protection for DSH plugin and prompt changes",
   "type": "module",
