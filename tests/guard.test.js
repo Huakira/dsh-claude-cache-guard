@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CacheGuard, baselineFromSession, fingerprint, difference, changed, protectedModel } from '../guard.js';
+import { CacheGuard, baselineFromSession, fingerprint, difference, changed, protectedModel, digest, encodingMismatch } from '../guard.js';
 
 const selection = { provider: 'relay', model: 'claude-opus-5-5' };
 const tools = [{ name: 'read', description: 'Read a file', parameters: { type: 'object', properties: { path: { type: 'string' } } } }, { name: 'library', parameters: { type: 'object' } }];
@@ -170,4 +170,35 @@ test('baseline follows derived system history, ignoring normal runtime user cont
     ],
   };
   assert.deepEqual(baselineFromSession(session).fingerprint, base());
+});
+
+test('content-block system messages fingerprint as their text', () => {
+  const blocks = [{ type: 'text', text: 'fixed instructions' }];
+  assert.deepEqual(fingerprint(tools, blocks), base());
+  assert.equal(encodingMismatch(digest(blocks), blocks, base().system), true);
+  assert.equal(encodingMismatch(base().system, 'fixed instructions', base().system), false);
+});
+
+test('legacy array hashes are healed when live system text is unchanged', async () => {
+  const blocks = [{ type: 'text', text: 'fixed instructions' }];
+  const records = { s: { selection, fingerprint: { tools: base().tools, system: digest(blocks) }, dirty: true } };
+  const guard = make(async () => base(), records);
+  await guard.check('s', { session: {
+    requestHeader: () => ({ config: selection, tools }),
+    deriveMessages: () => [{ role: 'system', content: blocks }],
+  } });
+  assert.equal(guard.blocked('s', selection), false);
+  assert.equal(guard.records.s.fingerprint.system, base().system);
+});
+
+test('a real system text change is not treated as an encoding mismatch', async () => {
+  const blocks = [{ type: 'text', text: 'fixed instructions' }];
+  const guard = make(async () => fingerprint(tools, 'new fixed instructions'));
+  guard.dirty('prompt plugin');
+  await guard.check('s', { session: {
+    requestHeader: () => ({ config: selection, tools }),
+    deriveMessages: () => [{ role: 'system', content: blocks }],
+  } });
+  assert.equal(guard.blocked('s', selection), true);
+  assert.equal(guard.records.s.pending.diff.system, true);
 });

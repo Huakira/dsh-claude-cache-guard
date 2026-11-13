@@ -8,15 +8,31 @@ export function canonical(value) {
   );
   return value;
 }
-const hash = value => createHash('sha256').update(JSON.stringify(canonical(value))).digest('hex');
+export function digest(value) {
+  return createHash('sha256').update(JSON.stringify(canonical(value))).digest('hex');
+}
+// DSH system messages are content blocks; inspect() renders a string. Hash the text either way.
+export function systemText(content) {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return content == null ? '' : String(content);
+  return content.map(block => {
+    if (typeof block === 'string') return block;
+    if (block && typeof block === 'object' && typeof block.text === 'string') return block.text;
+    return '';
+  }).join('');
+}
+export function encodingMismatch(storedHash, content, currentHash) {
+  if (!Array.isArray(content)) return false;
+  return storedHash === digest(content) && currentHash === digest(systemText(content));
+}
 export function protectedModel(selection, providers = []) {
   return /claude/i.test(selection?.model ?? '') &&
     (!providers.length || providers.includes(selection.provider));
 }
 export function fingerprint(tools, system) {
   return {
-    tools: tools.map(t => ({ name: t.name, hash: hash(t) })),
-    system: hash(system),
+    tools: tools.map(t => ({ name: t.name, hash: digest(t) })),
+    system: digest(systemText(system)),
   };
 }
 export function difference(before, after) {
@@ -26,7 +42,7 @@ export function difference(before, after) {
     added: after.tools.filter(t => !oldTools.has(t.name)).map(t => t.name),
     removed: before.tools.filter(t => !newTools.has(t.name)).map(t => t.name),
     changed: after.tools.filter(t => oldTools.has(t.name) && oldTools.get(t.name) !== t.hash).map(t => t.name),
-    reordered: hash(before.tools.map(t => t.name)) !== hash(after.tools.map(t => t.name)),
+    reordered: digest(before.tools.map(t => t.name)) !== digest(after.tools.map(t => t.name)),
     system: before.system !== after.system,
   };
 }
@@ -91,6 +107,10 @@ export class CacheGuard {
         this.checks++;
         const current = await this.inspect(agent, signal);
         if (signal?.aborted || epoch !== this.epoch) return; // never approve cancelled work or clear a newer change
+        const content = agent?.session?.deriveMessages?.().findLast(m => m.role === 'system')?.content;
+        if (content !== undefined && encodingMismatch(record.fingerprint.system, content, current.system)) {
+          record.fingerprint = { ...record.fingerprint, system: current.system };
+        }
         const diff = difference(record.fingerprint, current);
         record.pending = changed(diff) ? { fingerprint: current, diff, epoch } : undefined;
         record.error = undefined;
