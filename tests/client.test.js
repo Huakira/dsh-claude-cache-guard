@@ -112,6 +112,7 @@ test('ok/value/result envelope produces pending notice and an accept control', a
   h.close();
   await h.flush();
   assert.equal(h.notices.length, 1);
+  assert.equal(h.notices[0].level, 'error');
   assert.equal(h.notices[0].text, pending);
   const buttons = h.buttons();
   assert.equal(buttons[0].props.children[0], '缓存变更待处理');
@@ -150,4 +151,25 @@ test('a late response for the old session cannot change or notify the newly sele
   assert.equal(h.calls.at(-1)[0], 's2');
   assert.equal(h.calls.at(-1)[1], '/cacheguard');
   assert.deepEqual(h.notices, []);
+});
+
+test('a second completed turn while a status read is in flight is queued, not dropped', async () => {
+  const first = deferred();
+  let n = 0;
+  const h = harness(async () => {
+    n += 1;
+    return n === 1 ? first.promise : result(pending);
+  });
+  h.close(1);
+  await h.flush();
+  assert.equal(h.calls.length, 1);
+  h.close(2);
+  await h.flush();
+  assert.equal(h.calls.length, 1, 'in-flight read is not started twice');
+  first.resolve(result(normal));
+  await h.flush();
+  assert.equal(h.calls.length, 2);
+  assert.equal(h.calls[1][1], '/cacheguard');
+  assert.equal(h.notices.length, 1);
+  assert.equal(h.notices[0].level, 'error');
 });
