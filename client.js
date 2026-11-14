@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: 'dsh-claude-cache-guard',
+  id: '@huakirax/dsh-claude-cache-guard',
   factory: require => {
     const React = require('react');
     const h = React.createElement;
